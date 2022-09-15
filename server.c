@@ -5,7 +5,40 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <unistd.h>
+
 #define SA struct sockaddr
+#define MAXSIZE 1024
+
+void printbuffer(char *buffer, int size) {
+  for(int i=0; i<size; i++) {
+    printf("%c ", buffer[i]);
+  }
+}
+
+void communication(int fd) {
+  char buffer[MAXSIZE];
+  while(1) {
+    bzero(buffer, MAXSIZE);
+    // read from the socket
+    int totalbytesread = 0;
+    int size;
+    while(totalbytesread < MAXSIZE) {
+      size = read(fd, buffer+totalbytesread, MAXSIZE-totalbytesread);
+      totalbytesread += size;
+    }
+    printbuffer(buffer, MAXSIZE);
+    printf("\nNumber of bytes written: %d", size);
+    char ack[2];
+    ack[0] = '5';
+    size = write(fd, ack, 1);
+    bzero(buffer, MAXSIZE);
+    size = read(fd, buffer, MAXSIZE);
+    printf("\nSize of read buffer: %d", size);
+    int id = atoi(buffer);
+    printf("\nID of the client communicating: %d", id);
+  }
+}
 
 int main(int argc, char *argv[]){
 	if (argc < 3) {
@@ -31,6 +64,8 @@ int main(int argc, char *argv[]){
 	// sin_addre
 	serveradd.sin_addr.s_addr = htonl(INADDR_ANY);
 	serveradd.sin_port = htons(portnumber);
+
+  /*---- Bind the address struct to the socket ----*/
 	int val = bind(sockfd, (SA *) &serveradd, sizeof(serveradd));
 	if (val != 0) {
 		printf("\n Binding failed");
@@ -39,18 +74,23 @@ int main(int argc, char *argv[]){
 		printf("\n Binding succeeded");
 	}
 
+  /*---- Listen on the socket, with 5(maxnumclients) max connection requests queued ----*/
 	val = listen(sockfd, maxnumclients);
 	if (val != 0) {
 		printf("\n Listening Failed");
 	} else {
 		printf("\n Listening succeeded");
 	}
+
+  /*---- Accept call creates a new socket for the incoming connection ----*/
   len = sizeof(cli);
 	connfd = accept(sockfd, (SA *) &cli, &len);
 	if (connfd < 0) {
 		printf("\n Error connecting to the server");
 		exit(1);
 	} else {
-		printf("\n Hello world");
+		communication(connfd);
 	}
+  printf("\nClosing the socket");
+  close(sockfd);
 }
