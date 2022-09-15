@@ -5,7 +5,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-
+#define SA struct sockaddr
 
 int main(int argc, char *argv[]){
 	if (argc < 3) {
@@ -31,7 +31,7 @@ int main(int argc, char *argv[]){
 	// sin_addre
 	serveradd.sin_addr.s_addr = htonl(INADDR_ANY);
 	serveradd.sin_port = htons(portnumber);
-	int val = bind(sockfd, (struct sockaddr *) &serveradd, sizeof(serveradd));
+	int val = bind(sockfd, (SA *) &serveradd, sizeof(serveradd));
 	if (val != 0) {
 		printf("\n Binding failed");
 		exit(1);
@@ -45,9 +45,9 @@ int main(int argc, char *argv[]){
 	} else {
 		printf("\n Listening succeeded");
 	}
-
-	connfd = accept(sockfd, (struct sockaddr *) &cli, sizeof(cli));
-	if (connfd != 0) {
+  len = sizeof(cli);
+	connfd = accept(sockfd, (SA *) &cli, &len);
+	if (connfd < 0) {
 		printf("\n Error connecting to the server");
 		exit(1);
 	} else {
