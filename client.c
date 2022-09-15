@@ -36,5 +36,4 @@ int main()
     }
     else
         printf("connected to the server..\n");
-
 }
